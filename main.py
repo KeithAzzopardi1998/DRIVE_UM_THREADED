@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     vis = Visualizer()
     t_vis = VisualizerThread(
-        name = 'Visualizer'
+        name = 'Visualizer',
         visualizer = vis,
         inQ_img = q_image_vis,
         inQ_od_ts = q_od_ts_vis,
@@ -37,6 +37,7 @@ if __name__ == '__main__':
     t_vid = FramePublisherThread(
         name = 'FramePublisher',
         frame_source = vid,
+        fps = 5,
         outQ_vis = q_image_vis,
         outQ_od_ts = q_image_od_ts,
         outQ_od_others = q_image_od_others
@@ -46,28 +47,28 @@ if __name__ == '__main__':
 
     od_ts = ObjectDetectorTrafficSigns(
         model_path = 'models/object_detector_quant_4_edgetpu.tflite',
-        thresh = 0.2
-        device = ':0'
+        thresh = 0.3,
+        device = ':0',
     )
     t_od_ts = ObjectDetectorThread(
         name = 'ObjectDetector_TrafficSigns',
-        objectDetector = od_ts
-        inQ_img = q_image_od_ts
-        outQ_vis = q_od_ts_vis
+        objectDetector = od_ts,
+        inQ_img = q_image_od_ts,
+        outQ_vis = q_od_ts_vis,
     )
     t_od_ts.start()
     logging.debug("started ObjectDetector_TrafficSigns")
 
     od_others = ObjectDetectorOthers(
         model_path = 'models/ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite',
-        thresh = 0.4
-        device = ':1'
+        thresh = 0.5,
+        device = ':1',
     )
     t_od_others = ObjectDetectorThread(
         name = 'ObjectDetector_Others',
-        objectDetector = od_others
-        inQ_img = q_image_od_others
-        outQ_vis = q_od_others_vis
+        objectDetector = od_others,
+        inQ_img = q_image_od_others,
+        outQ_vis = q_od_others_vis,
     )
     t_od_others.start()
     logging.debug("started ObjectDetector_Others")
