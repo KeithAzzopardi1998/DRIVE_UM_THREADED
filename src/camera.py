@@ -22,7 +22,8 @@ class VideoSpoofer():
 class FramePublisherThread(Thread):
     def __init__(self,
                     frame_source,
-                    outQ_vis, outQ_od_ts, outqQ_od_others ,
+                    outQ_vis, outQ_od_ts, outQ_od_others ,
+                    fps,
                     group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(FramePublisherThread,self).__init__()
         self.target = target

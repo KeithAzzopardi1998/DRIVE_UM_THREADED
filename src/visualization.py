@@ -77,7 +77,7 @@ class Visualizer():
 
         return image
 
-        def init_socket(self):
+    def init_socket(self):
         """Initialize the socket.
         """
         logging.debug("establishing connection to visualization receiver")
@@ -123,22 +123,20 @@ class VisualizerThread(Thread):
         self.inQ_img = inQ_img
         self.inQ_od_ts = inQ_od_ts
         self.inQ_od_others = inQ_od_others
-        self.inQ_ld = inQ_ld
 
     
     def run(self):
         self.vis.init_socket()
         while True:
-            if (not self.inQ_img.empty()) and (not self.inQ_od_ts.empty()) and (not self.inQ_od_others.empty()) and (not self.inQ_ld.empty()):
+            if (not self.inQ_img.empty()) and (not self.inQ_od_ts.empty()) and (not self.inQ_od_others.empty()):
                 obj_ts = self.inQ_od_ts.get()
                 obj_others = self.inQ_od_others.get()
                 img = self.inQ_img.get()
 
-                #img_od = self.vis.vis_od(img,obj)
-                #img_od_1 = self.vis.get_image_od(img,obj1,colour=(255, 0, 0))
-                #img_od_2 = self.vis.get_image_od(img_od_1,obj2,colour=(0, 0, 255))
+                img_od_1 = self.vis.get_image_od(img,obj_ts,colour=(255, 0, 0))
+                img_od_2 = self.vis.get_image_od(img_od_1,obj_others,colour=(0, 0, 255))
                 #logging.debug("going to transmit image with OD visualization")
-                img_out = cv2.resize(img,self.out_img_size)
+                img_out = cv2.resize(img_od_2,self.out_img_size)
                 
                 actual_fps=1.0/((time.perf_counter()-self.prev_transmit_time))
                 cv2.putText(img_out,"%.2f FPS"%actual_fps,(0,img_out.shape[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)

@@ -9,6 +9,8 @@ from pycoral.utils.edgetpu import make_interpreter
 from threading import Thread
 from queue import Queue
 
+import time
+
 import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
@@ -73,7 +75,7 @@ class ObjectDetectorOthers():
         objs_dict = []
         for o in objs:
             temp_o = {}
-            temp_o['id'] = self.coco_to_bdd100k(o.id,10.0)
+            temp_o['id'] = self.coco_to_bdd100k.get(o.id,10.0)
             temp_o['score'] = o.score
             temp_o['bbox'] = o.bbox
             objs_dict.append(temp_o)
@@ -86,7 +88,7 @@ class ObjectDetectorThread(Thread):
                     inQ_img,
                     outQ_vis,
                     group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
-        super(ObjectDetectionThread,self).__init__()
+        super(ObjectDetectorThread,self).__init__()
         self.target = target
         self.name = name
         self.od_model = objectDetector
@@ -102,6 +104,6 @@ class ObjectDetectorThread(Thread):
                 #logging.debug("going to start detection")
                 objs = self.od_model.detect(img)
                 #self.od_model.print_detections(objs)
-                self.q_out.put(objs)
-                #logging.debug("finished detection")
+                self.outQ_vis.put(objs)
+                #logging.debug("finished detection ... returning %d objects"%len(objs))
             time.sleep(0.01)        
