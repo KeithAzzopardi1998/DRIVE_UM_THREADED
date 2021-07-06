@@ -46,8 +46,10 @@ if __name__ == '__main__':
     logging.debug("started FramePublisher")
 
     od_ts = ObjectDetectorTrafficSigns(
-        model_path = 'models/object_detector_quant_4_edgetpu.tflite',
-        thresh = 0.3,
+        model_path_detect = 'models/object_detector_quant_4_edgetpu.tflite',
+        thresh_detect = 0.3,
+        model_path_recog = 'models/object_recognition_quant.tflite',
+        thresh_recog = 0.3,
         device = ':0',
     )
     t_od_ts = ObjectDetectorThread(

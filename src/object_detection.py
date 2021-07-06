@@ -10,6 +10,9 @@ from threading import Thread
 from queue import Queue
 
 import time
+import tflite_runtime.interpreter as tflite
+
+import numpy as np
 
 import logging
 logging.basicConfig(level=logging.DEBUG,
@@ -17,32 +20,68 @@ logging.basicConfig(level=logging.DEBUG,
 import cv2
 
 class ObjectDetectorTrafficSigns():
-    def __init__(self,model_path,thresh,device):
-        self.interpreter = make_interpreter(model_path,device=device)
-        self.interpreter.allocate_tensors()      
-        self.threshold = thresh
+    def __init__(self,model_path_detect,thresh_detect,model_path_recog,thresh_recog,device):
+        #Traffic Sign Detection interpreter
+        self.detect_interpreter = make_interpreter(model_path_detect,device=device)
+        self.detect_interpreter.allocate_tensors()      
+        self.detect_threshold = thresh_detect
+
+        #Traffic Sign Recognition interpreter
+        self.tsr_interpreter = tflite.Interpreter(model_path=model_path_recog)
+        self.tsr_interpreter.allocate_tensors()
+        self.tsr_input_details = self.tsr_interpreter.get_input_details()
+        self.tsr_output_details = self.tsr_interpreter.get_output_details()
+        self.tsr_threshold = thresh_recog     
 
 
-    def detect(self,image):
+    def detect(self,image_pil,image_opencv):
         _, scale = common.set_resized_input(
-                        self.interpreter,
-                        image.size,
-                        lambda size: image.resize(size, Image.ANTIALIAS))
+                        self.detect_interpreter,
+                        image_pil.size,
+                        lambda size: image_pil.resize(size, Image.ANTIALIAS))
 
         start = time.perf_counter()
-        self.interpreter.invoke()
+        self.detect_interpreter.invoke()
         inference_time = time.perf_counter() - start
-        objs = detect.get_objects(self.interpreter, self.threshold, scale)
+        objs = detect.get_objects(self.detect_interpreter, self.detect_threshold, scale)
         objs_dict = []
         for o in objs:
             if o.id==7:
                 temp_o = {}
-                temp_o['id'] = 7.0
+                #temp_o['id'] = 7.0
+                #get the score and bounding box from the detection model
                 temp_o['score'] = o.score
                 temp_o['bbox'] = o.bbox
+                #find the label by running the recognition model
+                roi = image_opencv[o.bbox.ymin:o.bbox.ymax, o.bbox.xmin:o.bbox.xmax]
+                temp_o['id'] = self.recognize(roi)
                 objs_dict.append(temp_o)
         #logging.debug("Inference time: %.2f ms" % (inference_time * 1000))
         return objs_dict
+
+    def set_input_tsr(self, image):
+        """Sets the input tensor."""
+        tensor_index = self.tsr_input_details[0]['index']
+        input_tensor = self.tsr_interpreter.tensor(tensor_index)()[0]
+        input_tensor[:, :] = image
+
+    def recognize(self, image):
+        input_shape = self.tsr_input_details[0]['shape']
+        _, height, width, _ = input_shape
+
+        resized_image = cv2.resize(image, (width, height), interpolation=cv2.INTER_LINEAR)
+
+        resized_image = resized_image[np.newaxis, :]
+
+        self.set_input_tsr(resized_image)
+
+        self.tsr_interpreter.invoke()
+
+        output_proba = self.tsr_interpreter.get_tensor(self.tsr_output_details[0]['index'])[0]
+        tsr_class = np.argmax(output_proba)
+
+        return float("7.%d"%tsr_class)        
+
 
 class ObjectDetectorOthers():
     def __init__(self,model_path,thresh,device):
@@ -62,11 +101,11 @@ class ObjectDetectorOthers():
             9 : 6.0, #traffic light
         }
 
-    def detect(self,image):
+    def detect(self,image_pil,image_opencv):
         _, scale = common.set_resized_input(
                         self.interpreter,
-                        image.size,
-                        lambda size: image.resize(size, Image.ANTIALIAS))
+                        image_pil.size,
+                        lambda size: image_pil.resize(size, Image.ANTIALIAS))
 
         start = time.perf_counter()
         self.interpreter.invoke()
@@ -100,9 +139,9 @@ class ObjectDetectorThread(Thread):
             if not self.inQ_img.empty():
                 img_opencv = self.inQ_img.get()
                 img_opencv = cv2.cvtColor(img_opencv, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(img_opencv)
+                img_pil = Image.fromarray(img_opencv)
                 #logging.debug("going to start detection")
-                objs = self.od_model.detect(img)
+                objs = self.od_model.detect(img_pil,img_opencv)
                 #self.od_model.print_detections(objs)
                 self.outQ_vis.put(objs)
                 #logging.debug("finished detection ... returning %d objects"%len(objs))
