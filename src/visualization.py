@@ -112,7 +112,7 @@ class Visualizer():
 class VisualizerThread(Thread):
     def __init__(self,
                     visualizer,
-                    inQ_img, inQ_od_ts, inQ_od_others ,
+                    inQ_img, inQ_od_ts, inQ_od_others, inQ_ld,
                     group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(VisualizerThread,self).__init__()
         self.target = target
@@ -121,6 +121,7 @@ class VisualizerThread(Thread):
         self.out_img_size=(640,480)
         self.prev_transmit_time=time.perf_counter()
         self.inQ_img = inQ_img
+        self.inQ_ld = inQ_ld
         self.inQ_od_ts = inQ_od_ts
         self.inQ_od_others = inQ_od_others
 
@@ -128,9 +129,14 @@ class VisualizerThread(Thread):
     def run(self):
         self.vis.init_socket()
         while True:
-            if (not self.inQ_img.empty()) and (not self.inQ_od_ts.empty()) and (not self.inQ_od_others.empty()):
+            if  ((not self.inQ_img.empty())
+                and (not self.inQ_od_ts.empty())
+                and (not self.inQ_od_others.empty())
+                and (not self.inQ_ld.empty())):
+
                 obj_ts = self.inQ_od_ts.get()
                 obj_others = self.inQ_od_others.get()
+                lanes, intersection, pp_img = self.inQ_ld.get()
                 img = self.inQ_img.get()
 
                 img_od_1 = self.vis.get_image_od(img,obj_ts,colour=(255, 0, 0))
@@ -141,7 +147,8 @@ class VisualizerThread(Thread):
                 actual_fps=1.0/((time.perf_counter()-self.prev_transmit_time))
                 cv2.putText(img_out,"%.2f FPS"%actual_fps,(0,img_out.shape[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 
-                self.vis.transmit_image(img_out)
+                #self.vis.transmit_image(img_out)
+                self.vis.transmit_image(pp_img)
                 self.prev_transmit_time=time.perf_counter()
                 #self.vis.display_image(img_out)
             time.sleep(0.01)

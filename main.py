@@ -4,6 +4,7 @@ sys.path.append('.')
 from src.camera import VideoSpoofer, FramePublisherThread
 from src.visualization import Visualizer, VisualizerThread
 from src.object_detection import ObjectDetectorTrafficSigns, ObjectDetectorOthers, ObjectDetectorThread
+from src.lane_detection import LaneDetector, LaneDetectorThread
 
 from threading import Thread
 from queue import Queue
@@ -16,6 +17,8 @@ QUEUE_SIZE = 10
 q_image_od_ts = Queue(QUEUE_SIZE)
 q_image_od_others = Queue(QUEUE_SIZE)
 q_image_vis = Queue(QUEUE_SIZE)
+q_image_ld = Queue(QUEUE_SIZE)
+q_ld_vis = Queue(QUEUE_SIZE)
 q_od_ts_vis = Queue(QUEUE_SIZE)
 q_od_others_vis = Queue(QUEUE_SIZE)
 
@@ -28,7 +31,8 @@ if __name__ == '__main__':
         visualizer = vis,
         inQ_img = q_image_vis,
         inQ_od_ts = q_od_ts_vis,
-        inQ_od_others = q_od_others_vis
+        inQ_od_others = q_od_others_vis,
+        inQ_ld = q_ld_vis
     )
     t_vis.start()
     logging.debug("started Visualizer")
@@ -40,7 +44,8 @@ if __name__ == '__main__':
         fps = 5,
         outQ_vis = q_image_vis,
         outQ_od_ts = q_image_od_ts,
-        outQ_od_others = q_image_od_others
+        outQ_od_others = q_image_od_others,
+        outQ_ld = q_image_ld
     )
     t_vid.start()
     logging.debug("started FramePublisher")
@@ -74,3 +79,13 @@ if __name__ == '__main__':
     )
     t_od_others.start()
     logging.debug("started ObjectDetector_Others")
+
+    ld = LaneDetector()
+    t_ld =LaneDetectorThread(
+        name = 'LaneDetector',
+        laneDetector = ld,
+        inQ_img = q_image_ld,
+        outQ_vis = q_ld_vis
+    )
+    t_ld.start()
+    logging.debug("started LaneDetector")
