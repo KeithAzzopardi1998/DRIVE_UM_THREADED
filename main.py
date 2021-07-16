@@ -37,7 +37,9 @@ if __name__ == '__main__':
     t_vis.start()
     logging.debug("started Visualizer")
 
-    vid = VideoSpoofer(video_path='./bfmc2020_online_1.avi')
+    vid = VideoSpoofer(
+        video_path='./bfmc2020_online_1.avi'
+    )
     t_vid = FramePublisherThread(
         name = 'FramePublisher',
         frame_source = vid,

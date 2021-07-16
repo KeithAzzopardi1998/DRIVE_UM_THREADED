@@ -148,7 +148,10 @@ class VisualizerThread(Thread):
                 cv2.putText(img_out,"%.2f FPS"%actual_fps,(0,img_out.shape[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 
                 #self.vis.transmit_image(img_out)
+                self.vis.transmit_image(img)
+                time.sleep(0.1)
                 self.vis.transmit_image(pp_img)
+                time.sleep(0.1)
                 self.prev_transmit_time=time.perf_counter()
                 #self.vis.display_image(img_out)
             time.sleep(0.01)

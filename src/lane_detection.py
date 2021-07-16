@@ -17,8 +17,8 @@ class LaneDetector():
         self.width = self.img_shape[1]
 
         #ROI mask
-        region_top_left = (0.15*self.width, 0.3*self.height)
-        region_top_right = (0.85*self.width, 0.3*self.height)
+        region_top_left = (0.2*self.width, 0.45*self.height)
+        region_top_right = (0.8*self.width, 0.45*self.height)
         region_bottom_left_A = (0.00*self.width, 1.00*self.height)
         region_bottom_left_B = (0.00*self.width, 0.8*self.height)
         region_bottom_right_A = (1.00*self.width, 1.00*self.height)
@@ -29,6 +29,9 @@ class LaneDetector():
                                          region_top_right,
                                          region_bottom_right_B,
                                          region_bottom_right_A]], dtype=np.int32)      
+
+        self.alpha = 1.3 #basic contrast control
+        self.beta = 0 #basic brightness control
 
     def getLanes(self, img_in):
         try:
@@ -48,12 +51,10 @@ class LaneDetector():
             intersection_y = -1
             # Begin lane detection pipiline
             img = img_in.copy()
-            img = cv2.convertScaleAbs(img,alpha=2.0,beta=30)
-            #print("LANE LINES LOG - COPIED IMAGE", img)
+            img = cv2.convertScaleAbs(img, alpha=self.alpha, beta=self.beta)
+            #img = cv2.convertScaleAbs(img,alpha=2.0,beta=30)
             combined_hsl_img = pp.filter_img_hsl(img)
-            #print("LANE LINES LOG - COMBINED IMAGE HSL", combined_hsl_img)
             grayscale_img = pp.grayscale(combined_hsl_img)
-            #print("LANE LINES LOG - COMBINED IMAGE GRAYSCALE", grayscale_img)
             gaussian_smoothed_img = pp.gaussian_blur(grayscale_img, kernel_size=5)
             canny_img = cv2.Canny(gaussian_smoothed_img, 50, 150)
             segmented_img = pp.getROI(canny_img,self.mask_vertices)
@@ -137,13 +138,13 @@ class LaneDetectorThread(Thread):
 
     def run(self):
         while True:
-            logging.debug("check 1")
+            #logging.debug("check 1")
             if  ((not self.inQ_img.empty())
                 and (not self.outQ_vis.full())):
-                logging.debug("check 2")
+                #logging.debug("check 2")
                 img = self.inQ_img.get()
                 ld_info = self.detector.getLanes(img)
-                logging.debug("check 3")
+                #logging.debug("check 3")
                 self.outQ_vis.put(ld_info)
                 
             time.sleep(0.01)   

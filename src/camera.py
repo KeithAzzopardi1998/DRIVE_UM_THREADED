@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import time
 from threading import Thread
 from queue import Queue
@@ -10,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG,
 class VideoSpoofer():
     def __init__(self, video_path):
         self.cap = cv2.VideoCapture(video_path)
-    
+
     def get_frame(self):
         ret, img = self.cap.read()
         if ret:
@@ -47,7 +48,6 @@ class FramePublisherThread(Thread):
                 img = self.source.get_frame()
                 img = cv2.resize(img, self.out_size, interpolation = cv2.INTER_AREA)
                 #logging.debug("pushing image to queue")
-                logging.debug("image shape is "+str(img.shape))
                 self.outQ_vis.put(img)#BGR
                 self.outQ_ld.put(img)#BGR
                 self.outQ_od_ts.put(img)#BGR
