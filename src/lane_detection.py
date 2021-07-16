@@ -17,18 +17,17 @@ class LaneDetector():
         self.width = self.img_shape[1]
 
         #ROI mask
-        region_top_left = (0.2*self.width, 0.45*self.height)
-        region_top_right = (0.8*self.width, 0.45*self.height)
-        region_bottom_left_A = (0.00*self.width, 1.00*self.height)
-        region_bottom_left_B = (0.00*self.width, 0.8*self.height)
-        region_bottom_right_A = (1.00*self.width, 1.00*self.height)
-        region_bottom_right_B = (1.00*self.width, 0.8*self.height)
-        self.mask_vertices = np.array([[region_bottom_left_A,
-                                         region_bottom_left_B,
-                                         region_top_left,
-                                         region_top_right,
-                                         region_bottom_right_B,
-                                         region_bottom_right_A]], dtype=np.int32)      
+        a = ( 0.00*self.width, 1.00*self.height)# gives a trapezium-like ROI
+        b = ( 0.00*self.width, 0.80*self.height)# gives a trapezium-like ROI
+        c = ( 0.20*self.width, 0.45*self.height)# gives a trapezium-like ROI
+        d = ( 0.80*self.width, 0.45*self.height)# gives a trapezium-like ROI
+        e = ( 1.00*self.width, 0.80*self.height)# gives a trapezium-like ROI
+        f = ( 1.00*self.width, 1.00*self.height)# gives a trapezium-like ROI
+        g = ( 0.90*self.width, 1.00*self.height)# this part covers the car hood
+        h = ( 0.85*self.width, 0.90*self.height)# this part covers the car hood
+        i = ( 0.15*self.width, 0.90*self.height)# this part covers the car hood
+        j = ( 0.10*self.width, 1.00*self.height)# this part covers the car hood
+        self.mask_vertices = np.array([[a,b,c,d,e,f,g,h,i,j]], dtype=np.int32)      
 
         self.alpha = 1.3 #basic contrast control
         self.beta = 0 #basic brightness control

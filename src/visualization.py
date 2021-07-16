@@ -1,3 +1,4 @@
+import numpy as np
 import time
 
 from PIL import Image
@@ -50,7 +51,68 @@ class Visualizer():
         self.serverIp   =  os.environ['IP_PC'] # PC ip
         self.port       =  2244            # com port
         self.encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+    
+    # ===================================== LANE DETECTION VISUALIZATION ===============================
+    def draw_lines(self, img, lines, color=[255, 0, 0], thickness=10, make_copy=True):
+        # Copy the passed image
+        img_copy = np.copy(img) if make_copy else img
 
+        for line in lines:
+            for x1,y1,x2,y2 in line:
+                cv2.line(img_copy, (x1, y1), (x2, y2), color, thickness)
+
+        return img_copy
+
+    def trace_lane_line_with_coefficients(self, img, line_coefficients, top_y, make_copy=True):
+        A = line_coefficients[0]
+        b = line_coefficients[1]
+        if A==0.0 and b==0.0:
+            img_copy = np.copy(img) if make_copy else img
+            return img_copy
+
+        height, width,_ = img.shape
+        bottom_y = height - 1
+        # y = Ax + b, therefore x = (y - b) / A
+        bottom_x = (bottom_y - b) / A
+        # clipping the x values
+        bottom_x = min(bottom_x, 2*width)
+        bottom_x = max(bottom_x, -1*width)
+
+        top_x = (top_y - b) / A
+        # clipping the x values
+        top_x = min(top_x, 2*width)
+        top_x = max(top_x, -1*width)
+
+        new_lines = [[[int(bottom_x), int(bottom_y), int(top_x), int(top_y)]]]
+        return self.draw_lines(img, new_lines, make_copy=make_copy)
+
+    def draw_intersection_line(self, img, y_intercept, make_copy=True):
+        _, width,_ = img.shape
+        line = [[[0, int(y_intercept), width, int(y_intercept)]]]
+        return self.draw_lines(img, line,color=[0, 255, 0], make_copy=make_copy)
+
+    def get_image_ld(self, image_in, lane_info, intersection_info):
+        intersection_slope = intersection_info[0]
+        intersection_y = intersection_info[1]
+        left_coefficients = lane_info[0]
+        right_coefficients = lane_info[1]
+        top_y = image_in.shape[0]*0.45
+
+        lane_img_left = self.trace_lane_line_with_coefficients(image_in, left_coefficients, top_y, make_copy=True)
+
+        if intersection_y == -1:
+            lane_img_final = self.trace_lane_line_with_coefficients(lane_img_left, right_coefficients, top_y, make_copy=False)
+        else:
+            lane_img_both = self.trace_lane_line_with_coefficients(lane_img_left, right_coefficients, top_y, make_copy=True)
+            lane_img_final = self.draw_intersection_line(lane_img_both,intersection_y, make_copy=False)
+
+        # image1 * alpha + image2 * beta + lambda
+        # image1 and image2 must be the same shape.
+        img_with_lane_weight =  cv2.addWeighted(image_in, 0.7, lane_img_final, 0.3, 0.0)
+
+        return img_with_lane_weight
+
+    # ===================================== OBJECT DETECTION VISUALIZATION ===============================
     def get_image_od(self, image_in, object_list, colour):
         # based on https://github.com/google-coral/pycoral/blob/master/examples/detect_image.py
         image = image_in.copy()
@@ -139,7 +201,8 @@ class VisualizerThread(Thread):
                 lanes, intersection, pp_img = self.inQ_ld.get()
                 img = self.inQ_img.get()
 
-                img_od_1 = self.vis.get_image_od(img,obj_ts,colour=(255, 0, 0))
+                img_ld = self.vis.get_image_ld(img,lanes,intersection)
+                img_od_1 = self.vis.get_image_od(img_ld,obj_ts,colour=(255, 0, 0))
                 img_od_2 = self.vis.get_image_od(img_od_1,obj_others,colour=(0, 0, 255))
                 #logging.debug("going to transmit image with OD visualization")
                 img_out = cv2.resize(img_od_2,self.out_img_size)
@@ -147,11 +210,13 @@ class VisualizerThread(Thread):
                 actual_fps=1.0/((time.perf_counter()-self.prev_transmit_time))
                 cv2.putText(img_out,"%.2f FPS"%actual_fps,(0,img_out.shape[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 
+                #use this to test the lane preprocessing
                 #self.vis.transmit_image(img_out)
-                self.vis.transmit_image(img)
-                time.sleep(0.1)
-                self.vis.transmit_image(pp_img)
-                time.sleep(0.1)
+                #time.sleep(0.1)
+                #self.vis.transmit_image(pp_img)
+                #time.sleep(0.1)
+
+                self.vis.transmit_image(img_out)
                 self.prev_transmit_time=time.perf_counter()
                 #self.vis.display_image(img_out)
             time.sleep(0.01)
