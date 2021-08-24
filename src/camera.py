@@ -3,6 +3,8 @@ import numpy as np
 import time
 from threading import Thread
 from queue import Queue
+import io
+import picamera
 
 import logging
 logging.basicConfig(level=logging.DEBUG,
@@ -19,7 +21,19 @@ class VideoSpoofer():
         else:
             logging.error("Failed to read video frame")
 
+class Camera():
+    def __init__(self):
+        self.width=320
+        self.height=240
+        self.camera = picamera.PiCamera()
+        self.camera.resolution = (self.width,self.height)
+        self.camera.framerate = 5
 
+    def get_frame(self):
+        out_img = np.empty((self.height*self.width*3,), dtype=np.uint8) 
+        self.camera.capture(out_img,'bgr')
+        return out_img.reshape((self.height,self.width,3))
+    
 class FramePublisherThread(Thread):
     def __init__(self,
                     frame_source,
