@@ -5,6 +5,8 @@ from src.camera import VideoSpoofer, Camera, FramePublisherThread
 from src.visualization import Visualizer, VisualizerThread
 from src.object_detection import ObjectDetectorTrafficSigns, ObjectDetectorOthers, ObjectDetectorThread
 from src.lane_detection import LaneDetector, LaneDetectorThread
+from src.control import AutonomousController, AutonomousControllerThread
+from src.nucleo import NucleoInterface, NucleoInterfaceThread
 
 from threading import Thread
 from queue import Queue
@@ -21,6 +23,10 @@ q_image_ld = Queue(QUEUE_SIZE)
 q_ld_vis = Queue(QUEUE_SIZE)
 q_od_ts_vis = Queue(QUEUE_SIZE)
 q_od_others_vis = Queue(QUEUE_SIZE)
+q_ld_con = Queue(QUEUE_SIZE)
+q_od_ts_con = Queue(QUEUE_SIZE)
+q_od_others_con = Queue(QUEUE_SIZE)
+q_con_nuc = Queue(QUEUE_SIZE)
 
 if __name__ == '__main__':
     logging.debug("going to launch threads")
@@ -92,3 +98,25 @@ if __name__ == '__main__':
     )
     t_ld.start()
     logging.debug("started LaneDetector")
+
+    con = AutonomousController()
+    t_con = AutonomousControllerThread(
+        name = 'AutonomousController',
+        autonomousController = con,
+        inQ_od_ts = q_od_ts_con,
+        inQ_od_others = q_od_others_con,
+        inQ_ld = q_ld_con,
+        outQ_nucleo = q_con_nuc
+    )
+    t_con.start()
+    logging.debug("started AutonomousController")
+
+    nuc = NucleoInterface()
+    t_nuc = NucleoInterfaceThread(
+        name = 'NucleoInterface',
+        nucleoInterface = nuc,
+        inQ_controller = q_con_nuc
+    )
+    t_nuc.start()
+    logging.debug("started NucleoInterface")
+
