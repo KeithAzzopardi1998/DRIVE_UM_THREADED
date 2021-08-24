@@ -1,7 +1,5 @@
 import cv2
 import numpy as np
-import src.line_preprocessing as pp
-
 from threading import Thread
 from queue import Queue
 import logging
@@ -13,7 +11,8 @@ class AutonomousController():
     def __init__(self):
         pass
     def getCommands():
-        pass
+        return [0.0,1.0]
+
 class AutonomousControllerThread(Thread):
     def __init__(self,
                     autonomousController,
@@ -47,6 +46,7 @@ class AutonomousControllerThread(Thread):
                 obj_others = self.inQ_od_others.get()
                 lanes, intersection, pp_img = self.inQ_ld.get()
 
-                self.outQ_nucleo.put([0.0 , 1.0])
+                com = self.controller.getCommands()
+                self.outQ_nucleo.put(com)
                 
             time.sleep(0.01)   
