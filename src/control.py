@@ -10,7 +10,7 @@ import time
 class AutonomousController():
     def __init__(self):
         pass
-    def getCommands():
+    def getCommands(self):
         return [0.0,1.0]
 
 class AutonomousControllerThread(Thread):
@@ -34,7 +34,7 @@ class AutonomousControllerThread(Thread):
         self.outQ_nucleo = outQ_nucleo
         self.list_outQs = [self.outQ_nucleo]
     
-    def ready():
+    def ready(self):
         in_ready = not any([q.empty() for q in self.list_inQs])
         out_ready = not any([q.full() for q in self.list_outQs])
         return in_ready and out_ready

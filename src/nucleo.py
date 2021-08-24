@@ -10,13 +10,13 @@ import time
 class NucleoInterface():
     def __init__(self):
         pass
-    def executeCommands(commands):
+    def executeCommands(self,commands):
         logging.debug("executing %s"%str(commands))
 
 class NucleoInterfaceThread(Thread):
     def __init__(self,
                     nucleoInterface,
-                    inQ_controller
+                    inQ_controller,
                     group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(NucleoInterfaceThread,self).__init__()
         self.target = target
@@ -26,7 +26,7 @@ class NucleoInterfaceThread(Thread):
         #input queues
         self.inQ_controller = inQ_controller
     
-    def ready():
+    def ready(self):
         return not self.inQ_controller.empty()
 
     def run(self):

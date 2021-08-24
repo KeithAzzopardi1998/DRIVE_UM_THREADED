@@ -125,7 +125,7 @@ class ObjectDetectorThread(Thread):
     def __init__(self,
                     objectDetector,
                     inQ_img,
-                    outQ_vis,
+                    outQ_vis, outQ_con,
                     group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(ObjectDetectorThread,self).__init__()
         self.target = target
@@ -133,6 +133,7 @@ class ObjectDetectorThread(Thread):
         self.od_model = objectDetector
         self.inQ_img = inQ_img
         self.outQ_vis = outQ_vis
+        self.outQ_con = outQ_con
 
     def run(self):
         while True:
@@ -144,5 +145,6 @@ class ObjectDetectorThread(Thread):
                 objs = self.od_model.detect(img_pil,img_opencv)
                 #self.od_model.print_detections(objs)
                 self.outQ_vis.put(objs)
+                self.outQ_con.put(objs)
                 #logging.debug("finished detection ... returning %d objects"%len(objs))
             time.sleep(0.01)        

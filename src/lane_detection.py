@@ -126,7 +126,7 @@ class LaneDetectorThread(Thread):
     def __init__(self,
                     laneDetector,
                     inQ_img,
-                    outQ_vis,
+                    outQ_vis, outQ_con,
                     group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(LaneDetectorThread,self).__init__()
         self.target = target
@@ -134,6 +134,7 @@ class LaneDetectorThread(Thread):
         self.detector = laneDetector
         self.inQ_img = inQ_img
         self.outQ_vis = outQ_vis
+        self.outQ_con = outQ_con
 
     def run(self):
         while True:
@@ -145,5 +146,6 @@ class LaneDetectorThread(Thread):
                 ld_info = self.detector.getLanes(img)
                 #logging.debug("check 3")
                 self.outQ_vis.put(ld_info)
+                self.outQ_con.put(ld_info)
                 
             time.sleep(0.01)   

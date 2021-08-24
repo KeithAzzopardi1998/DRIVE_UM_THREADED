@@ -43,10 +43,10 @@ if __name__ == '__main__':
     t_vis.start()
     logging.debug("started Visualizer")
 
-    #vid = VideoSpoofer(
-    #    video_path='./bfmc2020_online_1.avi'
-    #)
-    vid = Camera()
+    vid = VideoSpoofer(
+        video_path='./bfmc2020_online_1.avi'
+    )
+    #vid = Camera()
     t_vid = FramePublisherThread(
         name = 'FramePublisher',
         frame_source = vid,
@@ -71,6 +71,7 @@ if __name__ == '__main__':
         objectDetector = od_ts,
         inQ_img = q_image_od_ts,
         outQ_vis = q_od_ts_vis,
+        outQ_con = q_od_ts_con
     )
     t_od_ts.start()
     logging.debug("started ObjectDetector_TrafficSigns")
@@ -85,6 +86,7 @@ if __name__ == '__main__':
         objectDetector = od_others,
         inQ_img = q_image_od_others,
         outQ_vis = q_od_others_vis,
+        outQ_con = q_od_others_con
     )
     t_od_others.start()
     logging.debug("started ObjectDetector_Others")
@@ -94,7 +96,8 @@ if __name__ == '__main__':
         name = 'LaneDetector',
         laneDetector = ld,
         inQ_img = q_image_ld,
-        outQ_vis = q_ld_vis
+        outQ_vis = q_ld_vis,
+        outQ_con = q_ld_con
     )
     t_ld.start()
     logging.debug("started LaneDetector")
