@@ -3,15 +3,30 @@ import numpy as np
 from threading import Thread
 from queue import Queue
 import logging
+import serial
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
 import time
+from src.utils.messageConverter import MessageConverter
 
-class NucleoInterface():
+class NucleoMock():
     def __init__(self):
         pass
     def executeCommands(self,commands):
         logging.debug("executing %s"%str(commands))
+
+class NucleoInterface():
+    def __init__(self):
+        # comm init       
+        self.serialCom = serial.Serial('/dev/ttyACM0',256000,timeout=0.1)
+        self.serialCom.flushInput()
+        self.serialCom.flushOutput()
+        self.messageConverter = MessageConverter()
+
+    def executeCommands(self,commands):
+        logging.debug("executing %s"%str(commands))
+        command_msg = self.messageConverter.get_command(**commands)
+        self.serialCom.write(command_msg.encode('ascii'))
 
 class NucleoInterfaceThread(Thread):
     def __init__(self,
