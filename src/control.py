@@ -117,7 +117,7 @@ class AutonomousController():
         #speed maximum = 0.3
         command = {
             'action' : 'MCTL',
-            'speed'  : 0.20,
+            'speed'  : 0.15,
             'steerAngle' : float(weighted_angle)
         }
         nucleo_queue.put(command)
@@ -208,6 +208,9 @@ class AutonomousControllerThread(Thread):
         in_ready = not any([q.empty() for q in self.list_inQs])
         out_ready = not any([q.full() for q in self.list_outQs])
         return in_ready and out_ready
+    
+    def nucleoReady(self):
+        return self.outQ_nucleo.empty()
 
     def run(self):
         while True:
@@ -216,8 +219,7 @@ class AutonomousControllerThread(Thread):
                 obj_others = self.inQ_od_others.get()
                 lanes, intersection, pp_img = self.inQ_ld.get()
 
-                com = self.controller.getCommands(lanes,intersection,obj_others, pp_img.shape, self.outQ_nucleo)
-                #com = self.controller.getCommands()
-                # self.outQ_nucleo.put(com)
+                if self.nucleoReady():
+                    com = self.controller.getCommands(lanes,intersection,obj_others, pp_img.shape, self.outQ_nucleo)
                 
             time.sleep(0.01)   
