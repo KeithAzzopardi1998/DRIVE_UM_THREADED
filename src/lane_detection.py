@@ -118,6 +118,7 @@ class LaneDetector():
             print("detected intersection with condition(s) c1: %s, c2: %s, c3: %s"
                     % (cond1,cond2,cond3))
             slope, intercept = pp.getLanesFormula(lines)
+            print("intersection slope: ", slope)
             return [slope, intercept]
         else:
             return [-1,-1]     

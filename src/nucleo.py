@@ -13,8 +13,8 @@ from src.utils.messageConverter import MessageConverter
 class NucleoMock():
     def __init__(self):
         pass
-    def executeCommands(self,commands):
-        logging.debug("executing %s"%str(commands))
+    def executeCommand(self,command):
+        logging.debug("executing %s"%str(command))
 
 class NucleoInterface():
 
