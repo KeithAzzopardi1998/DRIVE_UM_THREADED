@@ -21,7 +21,7 @@ class AutonomousController():
         self.last_n_angles = np.zeros(self.angles_to_store)
         self.index = 0
         
-        self.actions = ["right",
+        self.actions = ["left",
                         "left",
                         "right",
                         "left",
@@ -103,12 +103,18 @@ class AutonomousController():
             print("routine_intersection: finished making right turn")
         elif next_action=="left":
             print("routine_intersection: making left turn")
-            self.command_drive(0.15, 0.0 + (theta*3))
-            self.command_wait(3)
-            self.command_drive(0.15, 0.0)
-            self.command_wait(3)
-            self.command_drive(0.15, -15)
-            self.command_wait(5)
+            for i in range(10):
+                self.command_wait(0.05)
+                self.command_drive(0.15, 0.0 + (theta*3))
+            for i in range(50):
+                self.command_wait(0.1)
+                self.command_drive(0.15, -7.5)
+            for i in range(50):
+                self.command_wait(0.1)
+                self.command_drive(0.15, -15)
+            self.command_stop()
+            self.command_wait(4)
+            print("routine_intersection: finished making left turn")
         elif next_action=="straight":
             print("routine_intersection: going straight")
             self.command_drive(0.15, 0.0 + (theta*3))
