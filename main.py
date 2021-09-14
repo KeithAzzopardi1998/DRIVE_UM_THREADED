@@ -111,7 +111,7 @@ if __name__ == '__main__':
     logging.debug("started LaneDetector")
 
     #con = MockController()
-    con = AutonomousController()
+    con = AutonomousController(nucleo_queue=q_con_nuc)
     t_con = AutonomousControllerThread(
         name = 'AutonomousController',
         autonomousController = con,

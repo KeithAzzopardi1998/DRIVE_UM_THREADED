@@ -15,7 +15,7 @@ class MockController():
         return [0.0,1.0]
 
 class AutonomousController():
-    def __init__(self):
+    def __init__(self,nucleo_queue):
         self.angle_weights = np.array([0.7, 0.2, 0.1])
         self.angles_to_store = 3
         self.last_n_angles = np.zeros(self.angles_to_store)
@@ -30,8 +30,9 @@ class AutonomousController():
                         "right"
                         ]
         self.action_counter = 0
+        self.nucleo_queue = nucleo_queue
 
-    def getCommands(self, lane_info, intersection_info, obj_info,frame_size, nucleo_queue):
+    def getCommands(self, lane_info, intersection_info, obj_info,frame_size):
         try:
             #logging.debug("lane_info %s"%str(lane_info))
             #logging.debug("intersection_info %s"%str(intersection_info))
@@ -41,11 +42,14 @@ class AutonomousController():
             # if int_y >= 320:
             #     self.routine_intersection(int_grad, int_y)
             #logging.debug("calling cruise routine")
-            self.routine_cruise(ld_left, ld_right,frame_size, nucleo_queue)
+            self.routine_cruise(ld_left, ld_right,frame_size)
             
         except Exception as e:
             print("AutonomousController failed:\n",e,"\n\n")
     
+    def command_stop():
+        pass
+
     def routine_intersection(self,intersection_grad,intersection_y):
         logging.debug("routine_intersection: STOPPING AT INTERSECTION AT Y=%d"%intersection_y)
         logging.debug("the gradient is %d"%intersection_grad)
@@ -94,7 +98,7 @@ class AutonomousController():
         self.action_counter +=1
         return a
 
-    def routine_cruise(self,lane_left,lane_right,frame_size, nucleo_queue):
+    def routine_cruise(self,lane_left,lane_right,frame_size):
         #logging.debug("checpoint 1")
         steering_angle = self.calculate_steering_angle(lane_left,lane_right,frame_size)
         #logging.debug("checpoint 2")
@@ -126,7 +130,7 @@ class AutonomousController():
             'speed'  : float(speed),
             'steerAngle' : float(weighted_angle)
         }
-        nucleo_queue.put(command)
+        self.nucleo_queue.put(command)
     
     def calculate_steering_angle(self,lane_left,lane_right,frame_size):
         #convert from lane lines to lane points
@@ -226,6 +230,6 @@ class AutonomousControllerThread(Thread):
                 lanes, intersection, pp_img = self.inQ_ld.get()
 
                 if self.nucleoReady():
-                    com = self.controller.getCommands(lanes,intersection,obj_others, pp_img.shape, self.outQ_nucleo)
+                    com = self.controller.getCommands(lanes,intersection,obj_others, pp_img.shape)
                 
             time.sleep(0.01)   
