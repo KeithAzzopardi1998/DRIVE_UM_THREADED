@@ -99,11 +99,11 @@ class CameraThread(Thread):
         self.camera = PiCamera()
 
         # camera settings
-        self.camera.resolution      =   (1640,1232)
+        self.camera.resolution      =   self.imgSize
         self.camera.framerate       =   self.fps
-        self.camera.brightness      =   75 #0-100
+        self.camera.brightness      =   80 #0-100
         self.camera.shutter_speed   =   1200
-        self.camera.contrast        =   80 #-100 - 100
+        self.camera.contrast        =   85 #-100 - 100
         self.camera.iso             =   0 # auto
         self.recordMode             =   False
 
@@ -138,6 +138,5 @@ class CameraThread(Thread):
         self.camera.capture_sequence(
                                     self._streams(), 
                                     use_video_port  =   True, 
-                                    format          =   'bgr',
-                                    resize          =   self.imgSize)
+                                    format          =   'bgr')
      
