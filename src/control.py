@@ -21,7 +21,7 @@ class AutonomousController():
         self.last_n_angles = np.zeros(self.angles_to_store)
         self.index = 0
         
-        self.actions = ["left",
+        self.actions = ["right",
                         "left",
                         "right",
                         "left",
@@ -39,6 +39,20 @@ class AutonomousController():
             ld_left, ld_right = lane_info
             int_grad, int_y = intersection_info
 
+            logging.debug(obj_info)
+            
+            #logging.debug(obj_info)
+            detected_crosswalk=False
+            for obj in  obj_info:
+                obj_type = obj['id']
+                if obj_type == 7.4:
+                    logging.debug("found crosswalk sign in objects")
+                    detected_crosswalk=True
+            
+            #crosswalk is high priority
+            if detected_crosswalk:
+                self.routine_crosswalk()
+            
             if int_y >= 320:
                 self.routine_intersection(int_grad, int_y)
             #logging.debug("calling cruise routine")
@@ -73,6 +87,14 @@ class AutonomousController():
         }
         self.nucleo_queue.put(command)
 
+    def routine_crosswalk(self):
+        logging.debug("STOPPING AT CROSSWALK")
+        self.command_stop()
+        self.command_wait(duration=10.0)
+        for i in range(3):
+            self.command_wait(0.05)
+            self.command_drive(0.15,0.0)
+        
 
     def routine_intersection(self,intersection_grad,intersection_y):
         logging.debug("routine_intersection: STOPPING AT INTERSECTION AT Y=%d"%intersection_y)
@@ -256,9 +278,10 @@ class AutonomousControllerThread(Thread):
             if  self.ready():
                 obj_ts = self.inQ_od_ts.get()
                 obj_others = self.inQ_od_others.get()
+                objects = obj_ts + obj_others
                 lanes, intersection, pp_img = self.inQ_ld.get()
 
                 if self.nucleoReady():
-                    com = self.controller.getCommands(lanes,intersection,obj_others, pp_img.shape)
+                    com = self.controller.getCommands(lanes,intersection,objects, pp_img.shape)
                 
             time.sleep(0.01)   
