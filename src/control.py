@@ -31,7 +31,7 @@ class AutonomousController():
                         ]
         self.action_counter = 0
         self.nucleo_queue = nucleo_queue
-
+    
     def getCommands(self, lane_info, intersection_info, obj_info,frame_size):
         try:
             #logging.debug("lane_info %s"%str(lane_info))
@@ -80,44 +80,46 @@ class AutonomousController():
         self.command_stop()
         logging.debug("stopped at intersection ... waiting")
         self.command_wait(duration=10.0)
-        logging.debug("finished waiting at intersection")
-        '''
+        logging.debug("submitted wait command")
 
         #the angle at which we are approaching the intersection (in degrees)
         theta = math.atan(intersection_grad)
         alpha = 90 + math.atan(intersection_grad)
-        print("the angle of approach is ",alpha)
+        logging.debug("submitted wait command")
 
         # TODO: how to determine these?
         next_action = self.getNextAction()
-        
+
         if next_action=="right":
             print("routine_intersection: making right turn")
-            self.car.drive(0.15, 0.0 + (theta*3))
-            time.sleep(3)
-            self.car.drive(0.15, 20)
-            time.sleep(4)
+            for i in range(5):
+                self.command_wait(0.05)
+                self.command_drive(0.15, 0.0 + (theta*3))
+            for i in range(50):
+                self.command_wait(0.1)
+                self.command_drive(0.15, 15)
+            self.command_stop()
+            self.command_wait(4)
+            print("routine_intersection: finished making right turn")
         elif next_action=="left":
             print("routine_intersection: making left turn")
-            self.car.drive(0.15, 0.0 + (theta*3))
-            time.sleep(3)
-            self.car.drive(0.15, 0.0)
-            time.sleep(3)
-            self.car.drive(0.15, -20)
-            time.sleep(5)
+            self.command_drive(0.15, 0.0 + (theta*3))
+            self.command_wait(3)
+            self.command_drive(0.15, 0.0)
+            self.command_wait(3)
+            self.command_drive(0.15, -15)
+            self.command_wait(5)
         elif next_action=="straight":
             print("routine_intersection: going straight")
-            self.car.drive(0.15, 0.0 + (theta*3))
-            time.sleep(3)
-            self.car.drive(0.15, 0.0)
-            time.sleep(3)
-            self.car.drive(0.15, 0.0)
-            time.sleep(3)
+            self.command_drive(0.15, 0.0 + (theta*3))
+            self.command_wait(3)
+            self.command_drive(0.15, 0.0)
+            self.command_wait(3)
+            self.command_drive(0.15, 0.0)
+            self.command_wait(3)
         else:
             pass
         
-        time.sleep(0.1)
-        '''
 
     def getNextAction(self):
         a = self.actions[self.action_counter]
@@ -133,7 +135,7 @@ class AutonomousController():
         weighted_angle = 0.0
         #logging.debug("checpoint 3")
         for i in range(self.angles_to_store):
-            weighted_angle += self.last_n_angles[(self.index + i + 1) % self.angles_to_store] * self.angle_weights[i]
+            weighted_angle += self.last_n_angles[(self.index + i) % self.angles_to_store] * self.angle_weights[i]
 
         #print('weighted angle', weighted_angle)
         #logging.debug("weighted angle: %.2f"%weighted_angle)
