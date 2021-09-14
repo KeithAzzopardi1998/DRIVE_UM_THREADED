@@ -101,9 +101,9 @@ class CameraThread(Thread):
         # camera settings
         self.camera.resolution      =   (1640,1232)
         self.camera.framerate       =   self.fps
-        self.camera.brightness      =   60
+        self.camera.brightness      =   75 #0-100
         self.camera.shutter_speed   =   1200
-        self.camera.contrast        =   50
+        self.camera.contrast        =   80 #-100 - 100
         self.camera.iso             =   0 # auto
         self.recordMode             =   False
 
