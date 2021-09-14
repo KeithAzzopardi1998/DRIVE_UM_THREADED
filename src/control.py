@@ -34,29 +34,44 @@ class AutonomousController():
     
     def getCommands(self, lane_info, intersection_info, obj_info,frame_size):
         try:
-            #logging.debug("lane_info %s"%str(lane_info))
-            #logging.debug("intersection_info %s"%str(intersection_info))
-            ld_left, ld_right = lane_info
-            int_grad, int_y = intersection_info
-
-            logging.debug(obj_info)
-            
-            #logging.debug(obj_info)
             detected_crosswalk=False
+            detected_car=False
+            detected_intersection=False
+
+            #lane line information
+            ld_left, ld_right = lane_info
+
+            #interection line information
+            int_grad, int_y = intersection_info
+            if detected_crosswalk:
+               detected_intersection=True
+            
+            #object detection information
             for obj in  obj_info:
                 obj_type = obj['id']
-                if obj_type == 7.4:
-                    logging.debug("found crosswalk sign in objects")
+                bb_width = obj['bbox'].xmax - obj['bbox'].xmin
+                if obj_type == 7.4:#crosswalk sign
                     detected_crosswalk=True
+                elif obj_type == 2.0:#car
+                    logging.debug("detected car with BB width %d"%bb_width)
+                    if bb_width>=150:
+                        detected_car=True
             
-            #crosswalk is high priority
-            if detected_crosswalk:
+            #detection of cars
+            # estimated distance to car | bounding box width
+            # 28 cm |  185 pixels
+            # 56 cm |  125 pixels
+            # 84 cm |  120 pixels
+            
+            #in order of priority
+            if detected_car:
+                self.routine_static_overtake()
+            elif detected_crosswalk:
                 self.routine_crosswalk()
-            
-            if int_y >= 320:
+            elif detected_intersection:
                 self.routine_intersection(int_grad, int_y)
-            #logging.debug("calling cruise routine")
-            self.routine_cruise(ld_left, ld_right,frame_size)
+            else:
+                self.routine_cruise(ld_left, ld_right,frame_size)
             
         except Exception as e:
             print("AutonomousController failed:\n",e,"\n\n")
@@ -95,6 +110,16 @@ class AutonomousController():
             self.command_wait(0.05)
             self.command_drive(0.15,0.0)
         
+    def routine_static_overtake(self):
+        logging.debug("INITIATING STATIC OVERTAKE")
+        #self.command_stop()
+        #self.command_wait(duration=5.0)
+        for i in range(20):
+            self.command_wait(0.1)
+            self.command_drive(0.18,-15)
+        for i in range(20):
+            self.command_wait(0.1)
+            self.command_drive(0.18,15)
 
     def routine_intersection(self,intersection_grad,intersection_y):
         logging.debug("routine_intersection: STOPPING AT INTERSECTION AT Y=%d"%intersection_y)
