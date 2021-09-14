@@ -16,16 +16,25 @@ class NucleoMock():
         logging.debug("executing %s"%str(commands))
 
 class NucleoInterface():
+
     def __init__(self):
         # comm init       
         self.serialCom = serial.Serial('/dev/ttyACM0',256000,timeout=0.1)
         self.serialCom.flushInput()
         self.serialCom.flushOutput()
         self.messageConverter = MessageConverter()
+        self.resetMotor()
 
-    def executeCommands(self,commands):
-        logging.debug("executing %s"%str(commands))
-        command_msg = self.messageConverter.get_command(**commands)
+    def resetMotor(self):
+        cmd = {
+            'action' : 'BRAK',
+            'steerAngle' : float(0.0)
+        }
+        self.executeCommand(cmd)
+
+    def executeCommand(self,command):
+        logging.debug("executing %s"%str(command))
+        command_msg = self.messageConverter.get_command(**command)
         self.serialCom.write(command_msg.encode('ascii'))
 
 class NucleoInterfaceThread(Thread):
@@ -48,6 +57,6 @@ class NucleoInterfaceThread(Thread):
         while True:
             if  self.ready():
                 com = self.inQ_controller.get()
-                self.nucleo.executeCommands(com)
+                self.nucleo.executeCommand(com)
                 
             time.sleep(0.01)   
