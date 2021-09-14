@@ -115,9 +115,15 @@ class AutonomousController():
         #self.car.drive(0.15, weighted_angle)
         #time.sleep(0.1)
         #speed maximum = 0.3
+        speed_max=0.15
+        #varying the speed based on the steering angle
+        #weighted_angle: -15 to 15
+        speed = abs(weighted_angle) #0 to 15
+        speed = speed / 1000.0 #0 to 0.015
+        speed = speed_max - speed # (speed_max-0.015) to speed_max
         command = {
             'action' : 'MCTL',
-            'speed'  : 0.14,
+            'speed'  : float(speed),
             'steerAngle' : float(weighted_angle)
         }
         nucleo_queue.put(command)
