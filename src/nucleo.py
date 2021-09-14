@@ -4,6 +4,7 @@ from threading import Thread
 from queue import Queue
 import logging
 import serial
+import time
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
 import time
@@ -34,8 +35,15 @@ class NucleoInterface():
 
     def executeCommand(self,command):
         logging.debug("executing %s"%str(command))
-        command_msg = self.messageConverter.get_command(**command)
-        self.serialCom.write(command_msg.encode('ascii'))
+        #check if it is one of our custom commands
+        action = command['action']
+        if action=="NOOP":
+            pass
+        elif action=="WAIT":
+            time.sleep(command['duration'])
+        else: #nucleo command
+            command_msg = self.messageConverter.get_command(**command)
+            self.serialCom.write(command_msg.encode('ascii'))
 
 class NucleoInterfaceThread(Thread):
     def __init__(self,

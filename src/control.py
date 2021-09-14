@@ -16,8 +16,8 @@ class MockController():
 
 class AutonomousController():
     def __init__(self,nucleo_queue):
-        self.angle_weights = np.array([0.7, 0.2, 0.1])
-        self.angles_to_store = 3
+        self.angle_weights = np.array([0.7, 0.2, 0.05, 0.05])
+        self.angles_to_store = 4
         self.last_n_angles = np.zeros(self.angles_to_store)
         self.index = 0
         
@@ -39,23 +39,49 @@ class AutonomousController():
             ld_left, ld_right = lane_info
             int_grad, int_y = intersection_info
 
-            # if int_y >= 320:
-            #     self.routine_intersection(int_grad, int_y)
+            if int_y >= 320:
+                self.routine_intersection(int_grad, int_y)
             #logging.debug("calling cruise routine")
             self.routine_cruise(ld_left, ld_right,frame_size)
             
         except Exception as e:
             print("AutonomousController failed:\n",e,"\n\n")
     
-    def command_stop():
-        pass
+    def command_stop(self,):
+        command = {
+            'action' : 'BRAK',
+            'steerAngle' : float(0.0)
+        }
+        self.nucleo_queue.put(command)
+    
+    def command_wait(self,duration=1.0):
+        command = {
+            'action' : 'WAIT',
+            'duration' : duration
+        }
+        self.nucleo_queue.put(command)
+        command = {
+            'action' : 'NOOP',
+        }
+        self.nucleo_queue.put(command)
+
+    def command_drive(self,speed,angle):
+        command = {
+            'action' : 'MCTL',
+            'speed'  : float(speed),
+            'steerAngle' : float(angle)
+        }
+        self.nucleo_queue.put(command)
+
 
     def routine_intersection(self,intersection_grad,intersection_y):
         logging.debug("routine_intersection: STOPPING AT INTERSECTION AT Y=%d"%intersection_y)
         logging.debug("the gradient is %d"%intersection_grad)
+        self.command_stop()
+        logging.debug("stopped at intersection ... waiting")
+        self.command_wait(duration=10.0)
+        logging.debug("finished waiting at intersection")
         '''
-        self.car.stop(0.0)
-        time.sleep(3)
 
         #the angle at which we are approaching the intersection (in degrees)
         theta = math.atan(intersection_grad)
@@ -110,7 +136,7 @@ class AutonomousController():
             weighted_angle += self.last_n_angles[(self.index + i + 1) % self.angles_to_store] * self.angle_weights[i]
 
         #print('weighted angle', weighted_angle)
-        logging.debug("weighted angle: %.2f"%weighted_angle)
+        #logging.debug("weighted angle: %.2f"%weighted_angle)
 
         self.index += 1
         if self.index % self.angles_to_store == 0 and self.index >= 20:
@@ -125,12 +151,7 @@ class AutonomousController():
         speed = abs(weighted_angle) #0 to 15
         speed = speed / 1000.0 #0 to 0.015
         speed = speed_max - speed # (speed_max-0.015) to speed_max
-        command = {
-            'action' : 'MCTL',
-            'speed'  : float(speed),
-            'steerAngle' : float(weighted_angle)
-        }
-        self.nucleo_queue.put(command)
+        self.command_drive(speed,weighted_angle)
     
     def calculate_steering_angle(self,lane_left,lane_right,frame_size):
         #convert from lane lines to lane points

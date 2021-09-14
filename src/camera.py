@@ -117,22 +117,18 @@ class CameraThread(Thread):
         """  
         while True:   
             yield self._stream
-            logging.debug("yield called")
             self._stream.seek(0)
             data = self._stream.read()
 
             # read and reshape from bytes to np.array
             data  = np.frombuffer(data, dtype=np.uint8)
             data  = np.reshape(data, (480, 640, 3))
-            logging.debug("pushing image to queue")
             self.outQ_vis.put(data)#BGR
             self.outQ_ld.put(data)#BGR
             self.outQ_od_ts.put(data)#BGR
             self.outQ_od_others.put(data)#BGR          
-            logging.debug("image pushed to all queues")
             self._stream.seek(0)
             self._stream.truncate()
-            logging.debug("finished")
 
     def run(self):
         """Start sending data through pipe. 
