@@ -67,3 +67,81 @@ class FramePublisherThread(Thread):
                 self.outQ_od_ts.put(img)#BGR
                 self.outQ_od_others.put(img)#BGR
                 time.sleep(1.0/self.fps)
+
+class CameraThread(Thread):
+    def __init__(self,
+                    outQ_vis, outQ_od_ts, outQ_od_others, outQ_ld,
+                    fps,
+                    group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
+        super(CameraThread,self).__init__()
+        self.target = target
+        self.name = name
+        self.fps = fps
+        self.outQ_vis = outQ_vis
+        self.outQ_ld = outQ_ld
+        self.outQ_od_ts = outQ_od_ts
+        self.outQ_od_others = outQ_od_others
+        self.list_outQs = [self.outQ_vis,self.outQ_ld,self.outQ_od_ts,self.outQ_od_others]
+        #self.out_size = (480, 640)
+        self.imgSize = (640, 480)
+    
+        self._stream      =   io.BytesIO()
+
+    def _init_camera(self):
+        """Init the PiCamera and its parameters
+        """
+        
+        # this how the firmware works.
+        # the camera has to be imported here
+        from picamera import PiCamera
+
+        # camera
+        self.camera = PiCamera()
+
+        # camera settings
+        self.camera.resolution      =   (1640,1232)
+        self.camera.framerate       =   self.fps
+        self.camera.brightness      =   60
+        self.camera.shutter_speed   =   1200
+        self.camera.contrast        =   50
+        self.camera.iso             =   0 # auto
+        self.recordMode             =   False
+
+    def ready(self):
+        out_ready = not any([q.full() for q in self.list_outQs])
+        return out_ready
+    
+    def _streams(self):
+        """Stream function that actually published the frames into the pipes. Certain 
+        processing(reshape) is done to the image format. 
+        """  
+        while True:   
+            yield self._stream
+            logging.debug("yield called")
+            self._stream.seek(0)
+            data = self._stream.read()
+
+            # read and reshape from bytes to np.array
+            data  = np.frombuffer(data, dtype=np.uint8)
+            data  = np.reshape(data, (480, 640, 3))
+            logging.debug("pushing image to queue")
+            self.outQ_vis.put(data)#BGR
+            self.outQ_ld.put(data)#BGR
+            self.outQ_od_ts.put(data)#BGR
+            self.outQ_od_others.put(data)#BGR          
+            logging.debug("image pushed to all queues")
+            self._stream.seek(0)
+            self._stream.truncate()
+            logging.debug("finished")
+
+    def run(self):
+        """Start sending data through pipe. 
+        """
+        self._init_camera()
+        
+        self.camera.capture_sequence(
+                                    self._streams(), 
+                                    use_video_port  =   True, 
+                                    format          =   'bgr',
+                                    resize          =   self.imgSize)
+     

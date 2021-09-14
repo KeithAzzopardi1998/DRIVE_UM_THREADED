@@ -1,7 +1,7 @@
 import sys
 sys.path.append('.')
 
-from src.camera import VideoSpoofer, Camera, FramePublisherThread
+from src.camera import VideoSpoofer, Camera, FramePublisherThread, CameraThread
 from src.visualization import Visualizer, VisualizerThread
 from src.object_detection import ObjectDetectorTrafficSigns, ObjectDetectorOthers, ObjectDetectorThread
 from src.lane_detection import LaneDetector, LaneDetectorThread
@@ -44,13 +44,21 @@ if __name__ == '__main__':
         t_vis.start()
         logging.debug("started Visualizer")
 
-        vid = VideoSpoofer(
-            video_path='./bfmc2020_online_1.avi'
-        )
+        #vid = VideoSpoofer(
+        #    video_path='./bfmc2020_online_1.avi'
+        #)
         #vid = Camera()
-        t_vid = FramePublisherThread(
+        #t_vid = FramePublisherThread(
+        #    name = 'FramePublisher',
+        #    frame_source = vid,
+        #    fps = 5,
+        #    outQ_vis = q_image_vis,
+        #    outQ_od_ts = q_image_od_ts,
+        #    outQ_od_others = q_image_od_others,
+        #    outQ_ld = q_image_ld
+        #)
+        t_vid = CameraThread(
             name = 'FramePublisher',
-            frame_source = vid,
             fps = 5,
             outQ_vis = q_image_vis,
             outQ_od_ts = q_image_od_ts,
