@@ -59,7 +59,7 @@ if __name__ == '__main__':
         #)
         t_vid = CameraThread(
             name = 'FramePublisher',
-            fps = 5,
+            fps = 3,
             outQ_vis = q_image_vis,
             outQ_od_ts = q_image_od_ts,
             outQ_od_others = q_image_od_others,
@@ -124,8 +124,8 @@ if __name__ == '__main__':
         t_con.start()
         logging.debug("started AutonomousController")
 
-        nuc = NucleoMock()
-        #nuc = NucleoInterface()
+        #nuc = NucleoMock()
+        nuc = NucleoInterface()
         t_nuc = NucleoInterfaceThread(
             name = 'NucleoInterface',
             nucleoInterface = nuc,
