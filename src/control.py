@@ -16,7 +16,7 @@ class MockController():
 
 class AutonomousController():
     def __init__(self):
-        self.angle_weights = np.array([0.8, 0.15, 0.05])
+        self.angle_weights = np.array([0.7, 0.2, 0.1])
         self.angles_to_store = 3
         self.last_n_angles = np.zeros(self.angles_to_store)
         self.index = 0
@@ -117,7 +117,7 @@ class AutonomousController():
         #speed maximum = 0.3
         command = {
             'action' : 'MCTL',
-            'speed'  : 0.15,
+            'speed'  : 0.14,
             'steerAngle' : float(weighted_angle)
         }
         nucleo_queue.put(command)
