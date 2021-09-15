@@ -78,7 +78,7 @@ class AutonomousController():
                 bb_width = obj['bbox'].xmax - obj['bbox'].xmin
                 if obj_type == 7.4:#crosswalk sign
                     detected_crosswalk=True
-                if obj_type == 7.4:#parking sign
+                if obj_type == 7.7:#parking sign
                     detected_parking=True
                 elif obj_type == 2.0:#car
                     logging.debug("detected car with BB width %d"%bb_width)
