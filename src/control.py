@@ -116,10 +116,10 @@ class AutonomousController():
         #self.command_wait(duration=5.0)
         for i in range(20):
             self.command_wait(0.1)
-            self.command_drive(0.18,-15)
+            self.command_drive(0.15,-15)
         for i in range(20):
             self.command_wait(0.1)
-            self.command_drive(0.18,15)
+            self.command_drive(0.15,15)
 
     def routine_intersection(self,intersection_grad,intersection_y):
         logging.debug("routine_intersection: STOPPING AT INTERSECTION AT Y=%d"%intersection_y)
