@@ -101,6 +101,7 @@ class AutonomousController():
         except Exception as e:
             print("AutonomousController failed:\n",e,"\n\n")
     
+    # ------------------- BASIC CAR COMMANDS ------------------- 
     def command_stop(self,):
         command = {
             'action' : 'BRAK',
@@ -127,6 +128,7 @@ class AutonomousController():
         }
         self.nucleo_queue.put(command)
 
+    # ------------------- ROUTINES  ------------------- 
     def routine_crosswalk(self):
         logging.debug("STOPPING AT CROSSWALK")
         self.command_stop()
@@ -198,12 +200,6 @@ class AutonomousController():
         else:
             pass
         
-
-    def getNextAction(self):
-        a = self.actions[self.action_counter]
-        self.action_counter +=1
-        return a
-
     def routine_cruise(self,lane_left,lane_right,frame_size,pitch):
         #logging.debug("checpoint 1")
         steering_angle = self.calculate_steering_angle(lane_left,lane_right,frame_size)
@@ -244,6 +240,18 @@ class AutonomousController():
             speed = speed + 3
 
         self.command_drive(speed,weighted_angle)
+ 
+    def routine_park_parallel(self):
+        pass
+
+    def routine_park_perpendicular(self):
+        pass
+    
+    # ------------------- UTILITIES  ------------------- 
+    def getNextAction(self):
+        a = self.actions[self.action_counter]
+        self.action_counter +=1
+        return a
     
     def calculate_steering_angle(self,lane_left,lane_right,frame_size):
         #convert from lane lines to lane points
