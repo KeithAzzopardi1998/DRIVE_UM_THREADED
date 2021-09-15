@@ -14,7 +14,8 @@ class NucleoMock():
     def __init__(self):
         pass
     def executeCommand(self,command):
-        logging.debug("executing %s"%str(command))
+        pass
+        #logging.debug("executing %s"%str(command))
 
 class NucleoInterface():
 

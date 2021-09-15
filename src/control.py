@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
 import time
 import math
+import RTIMU
 
 class MockController():
     def __init__(self):
@@ -31,6 +32,17 @@ class AutonomousController():
                         ]
         self.action_counter = 0
         self.nucleo_queue = nucleo_queue
+
+        #setting up the IMU
+        self.SETTINGS_FILE = "RTIMULib"
+        self.s = RTIMU.Settings(self.SETTINGS_FILE)
+        self.imu = RTIMU.RTIMU(self.s)
+        if (not self.imu.IMUInit()):
+            logging.debug("IMU Init Failed!!!!!")
+        self.imu.setSlerpPower(0.02)
+        self.imu.setGyroEnable(True)
+        self.imu.setAccelEnable(True)
+        self.imu.setCompassEnable(True)
     
     def getCommands(self, lane_info, intersection_info, obj_info,frame_size):
         try:
@@ -43,9 +55,22 @@ class AutonomousController():
 
             #interection line information
             int_grad, int_y = intersection_info
-            if detected_crosswalk:
+            if int_y >= 320:
                detected_intersection=True
-            
+
+            #IMU information
+            if self.imu.IMURead():
+                imu_data = self.imu.getIMUData()
+                imu_fusionPose = imu_data["fusionPose"]
+                imu_roll  =  math.degrees(imu_fusionPose[0])
+                imu_pitch =  math.degrees(imu_fusionPose[1])
+                imu_yaw   =  math.degrees(imu_fusionPose[2])
+                logging.debug("roll = %f pitch = %f yaw = %f" % (imu_roll,imu_pitch,imu_yaw))
+            else:
+                logging.debug("FAILED TO READ IMU DATA")
+                raise Exception("FAILED TO READ IMU DATA")
+
+
             #object detection information
             for obj in  obj_info:
                 obj_type = obj['id']
@@ -71,7 +96,7 @@ class AutonomousController():
             elif detected_intersection:
                 self.routine_intersection(int_grad, int_y)
             else:
-                self.routine_cruise(ld_left, ld_right,frame_size)
+                self.routine_cruise(ld_left, ld_right,frame_size, imu_pitch)
             
         except Exception as e:
             print("AutonomousController failed:\n",e,"\n\n")
@@ -179,7 +204,7 @@ class AutonomousController():
         self.action_counter +=1
         return a
 
-    def routine_cruise(self,lane_left,lane_right,frame_size):
+    def routine_cruise(self,lane_left,lane_right,frame_size,pitch):
         #logging.debug("checpoint 1")
         steering_angle = self.calculate_steering_angle(lane_left,lane_right,frame_size)
         #logging.debug("checpoint 2")
@@ -206,6 +231,18 @@ class AutonomousController():
         speed = abs(weighted_angle) #0 to 15
         speed = speed / 1000.0 #0 to 0.015
         speed = speed_max - speed # (speed_max-0.015) to speed_max
+
+        # speed must also be varied using the pitch
+        # detecting ramp using pitch 
+        # -5 < pitch < 5 : no ramp
+        # pitch < -5 : going UP the ramp
+        # pitch > 5 : going DOWN the ramp
+        if pitch >= 5.0:
+            speed = speed - 3
+        elif pitch <= -5.0:
+            # TODO send message to obstacleHandler
+            speed = speed + 3
+
         self.command_drive(speed,weighted_angle)
     
     def calculate_steering_angle(self,lane_left,lane_right,frame_size):
