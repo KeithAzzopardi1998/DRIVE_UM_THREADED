@@ -36,8 +36,9 @@ class ObjectDetectorTrafficSigns():
 
 
     def detect(self,image_pil,image_opencv):
-        x_crop_min = 160
-        image_pil = image_pil.crop((x_crop_min,0,image_pil.size[0],image_pil.size[1]))
+        x_crop_min = 220
+        y_crop_min = 60
+        image_pil = image_pil.crop((x_crop_min,y_crop_min,image_pil.size[0],image_pil.size[1]))
         _, scale = common.set_resized_input(
                         self.detect_interpreter,
                         image_pil.size,
@@ -56,9 +57,9 @@ class ObjectDetectorTrafficSigns():
                 temp_o['score'] = o.score
                 bb = o.bbox
                 bbox_updated = BBox(xmin=bb.xmin + x_crop_min,
-                                    ymin=bb.ymin,
-                                    xmax=bb.xmax+x_crop_min,
-                                    ymax=bb.ymax).map(int)
+                                    ymin=bb.ymin + y_crop_min,
+                                    xmax=bb.xmax + x_crop_min,
+                                    ymax=bb.ymax + y_crop_min).map(int)
                 temp_o['bbox'] = bbox_updated
                 #find the label by running the recognition model
                 roi = image_opencv[bbox_updated.ymin:bbox_updated.ymax, bbox_updated.xmin:bbox_updated.xmax]
