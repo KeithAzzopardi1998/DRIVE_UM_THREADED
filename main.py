@@ -15,7 +15,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
 
-QUEUE_SIZE = 10
+QUEUE_SIZE = 100
 q_image_od_ts = Queue(QUEUE_SIZE)
 q_image_od_others = Queue(QUEUE_SIZE)
 q_image_vis = Queue(QUEUE_SIZE)

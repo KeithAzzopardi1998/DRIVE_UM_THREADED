@@ -43,12 +43,13 @@ class AutonomousController():
         self.imu.setGyroEnable(True)
         self.imu.setAccelEnable(True)
         self.imu.setCompassEnable(True)
-    
+
     def getCommands(self, lane_info, intersection_info, obj_info,frame_size):
         try:
             detected_crosswalk=False
             detected_car=False
             detected_intersection=False
+            detected_parking=False
 
             #lane line information
             ld_left, ld_right = lane_info
@@ -56,7 +57,7 @@ class AutonomousController():
             #interection line information
             int_grad, int_y = intersection_info
             if int_y >= 320:
-               detected_intersection=True
+                detected_intersection=True
 
             #IMU information
             if self.imu.IMURead():
@@ -77,6 +78,8 @@ class AutonomousController():
                 bb_width = obj['bbox'].xmax - obj['bbox'].xmin
                 if obj_type == 7.4:#crosswalk sign
                     detected_crosswalk=True
+                if obj_type == 7.4:#parking sign
+                    detected_parking=True
                 elif obj_type == 2.0:#car
                     logging.debug("detected car with BB width %d"%bb_width)
                     if bb_width>=150:
@@ -95,6 +98,9 @@ class AutonomousController():
                 self.routine_crosswalk()
             elif detected_intersection:
                 self.routine_intersection(int_grad, int_y)
+            elif detected_parking:
+                self.routine_park_parallel()
+                #self.routine_park_perpendicular()
             else:
                 self.routine_cruise(ld_left, ld_right,frame_size, imu_pitch)
             
@@ -241,11 +247,61 @@ class AutonomousController():
 
         self.command_drive(speed,weighted_angle)
  
+    # start this routine approx. 10cm from the start of the parking slot
     def routine_park_parallel(self):
-        pass
+        logging.debug("starting parallel park")
+        for i in range(32):
+            self.command_wait(0.1)
+            self.command_drive(0.15, 1)
+        self.command_stop()
+        for i in range(23):
+            self.command_wait(0.1)
+            self.command_drive(-0.16, 20)
+        self.command_stop()
+        for i in range(7):
+            self.command_wait(0.1)
+            self.command_drive(-0.16, -18)
+        for i in range(7):
+            self.command_wait(0.1)
+            self.command_drive(-0.16, -15)
+        for i in range(4):
+            self.command_wait(0.1)
+            self.command_drive(-0.15, -12)
+        self.command_stop()
+        for i in range(8):
+            self.command_wait(0.1)
+            self.command_drive(0.15, 20)
+        self.command_stop()
+        logging.debug("PARKED!")
+        self.command_wait(5)
+        logging.debug("exiting parking")
+        for i in range(22):
+            self.command_wait(0.1)
+            self.command_drive(0.16, -20)
+        for i in range(5):
+            self.command_wait(0.1)
+            self.command_drive(0.14, 15)
+        logging.debug("finished")
+       
 
     def routine_park_perpendicular(self):
-        pass
+        logging.debug("starting perpendicluar park")
+        for i in range(27):
+            self.command_wait(0.1)
+            self.command_drive(0.16, 1)
+        self.command_stop()
+        for i in range(28):
+            self.command_wait(0.1)
+            self.command_drive(-0.17, 19)
+        self.command_stop()
+        logging.debug("PARKED!")
+        self.command_wait(5)
+        logging.debug("exiting parking")
+        for i in range(22):
+            self.command_wait(0.1)
+            self.command_drive(0.17, 19)
+        self.command_stop()
+
     
     # ------------------- UTILITIES  ------------------- 
     def getNextAction(self):
